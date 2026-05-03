@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/userModel');
 
 exports.protect = async (req, res, next) => {
     let token;
@@ -31,7 +31,7 @@ exports.authorizeOwnership = (model) => async (req, res, next) => {
         if (resource.creator.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ 
                 success: false, 
-                message: `User ${req.user.id} is not authorized to update/delete this resource` 
+                message: `You are not authorized to update this plan` 
             });
         }
 

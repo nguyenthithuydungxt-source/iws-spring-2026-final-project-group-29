@@ -7,7 +7,7 @@ const {
     updateExercise, 
     deleteExercise 
 } = require('../controllers/exerciseController');
-const { protect, authorizeOwnership } = require('../middleware/authMiddleware');
+const { protect, authorizeOwnership } = require('../middlewares/authMiddleware');
 const Exercise = require('../models/exerciseModel'); 
 
 router.use(protect); 

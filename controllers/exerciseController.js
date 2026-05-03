@@ -1,6 +1,6 @@
-const Exercise = require('../models/exercise');
-const MuscleGroup = require('../models/muscleGroup');
-const WorkoutPlan = require('../models/workoutPlan');
+const Exercise = require('../models/exerciseModel');
+const MuscleGroup = require('../models/muscleGroupModel');
+const WorkoutPlan = require('../models/workoutPlanModel');
 
 // @desc    Create Exercise
 exports.createExercise = async (req, res) => {
