@@ -16,7 +16,6 @@ exports.createPlan = async (req, res) => {
 // @route   GET /api/plans
 exports.getPlans = async (req, res) => {
     try {
-        // Chỉ lấy những plan do chính user hiện tại tạo ra
         const plans = await WorkoutPlan.find({ creator: req.user.id })
             .populate({ path: 'creator', select: 'name email' });
             

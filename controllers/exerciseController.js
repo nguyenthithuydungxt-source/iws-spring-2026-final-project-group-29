@@ -5,45 +5,66 @@ const WorkoutPlan = require('../models/workoutPlanModel');
 // @desc    Create Exercise
 exports.createExercise = async (req, res) => {
     try {
-        const muscle = await MuscleGroup.findById(req.body.muscleGroup);
-        if (!muscle) return res.status(404).json({ message: 'Muscle Group not found' });
+        const { name, sets, reps, weight, muscleGroup, workoutPlan } = req.body;
+
+        // Bước 25: Kiểm tra thiếu trường
+        if (!name || !sets || !reps || weight === undefined || !muscleGroup || !workoutPlan) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Please provide all required fields" 
+            });
+        }
+
+        const muscle = await MuscleGroup.findById(muscleGroup);
+        if (!muscle) return res.status(404).json({ success: false, message: 'Muscle Group not found' });
+
+        const plan = await WorkoutPlan.findById(workoutPlan);
+        if (!plan) return res.status(404).json({ success: false, message: 'Workout Plan not found' });
 
         req.body.creator = req.user.id;
         const exercise = await Exercise.create(req.body);
+        
         res.status(201).json({ success: true, data: exercise });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ success: false, message: error.message });
     }
 };
 
 // @desc    Get Exercises (Pagination & Sorting & Private)
 exports.getExercises = async (req, res) => {
     try {
-        let query = Exercise.find({ creator: req.user.id });
+        // Khởi tạo query tìm theo người tạo (Private)
+        const queryObj = { creator: req.user.id };
 
-        // SORTING
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 10;
+        const skip = (page - 1) * limit;
+        const totalExercises = await Exercise.countDocuments(queryObj);
+        const totalPages = Math.ceil(totalExercises / limit);
+
+        let query = Exercise.find(queryObj);
+
         if (req.query.sort) {
-            query = query.sort(req.query.sort);
+            const sortBy = req.query.sort.split(',').join(' ');
+            query = query.sort(sortBy);
         } else {
             query = query.sort('-createdAt');
         }
 
-        // PAGINATION
-        const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 10;
-        const skip = (page - 1) * limit;
-
         query = query.skip(skip).limit(limit);
 
-        const exercises = await query;
+        const exercises = await query.populate('muscleGroup', 'name').populate('workoutPlan', 'title');
+
         res.status(200).json({
             success: true,
-            count: exercises.length,
-            pagination: { page, limit },
-            data: exercises
+            page,
+            limit,
+            totalPages,
+            totalExercises,
+            exercises
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
 
@@ -54,18 +75,20 @@ exports.getExerciseById = async (req, res) => {
             .populate('muscleGroup', 'name description') 
             .populate('workoutPlan', 'title goal');       
 
-        if (!exercise) return res.status(404).json({ message: 'Exercise not found' });
+        if (!exercise) return res.status(404).json({ success: false, message: 'Exercise not found' });
 
+        // Bước 27: Check quyền sở hữu
         if (exercise.creator.toString() !== req.user.id) {
-            return res.status(403).json({ message: 'Forbidden access' });
+            return res.status(403).json({ success: false, message: 'Forbidden access' });
         }
 
         res.status(200).json({ success: true, data: exercise });
     } catch (error) {
-        res.status(400).json({ message: 'Invalid ID' });
+        res.status(400).json({ success: false, message: 'Invalid ID' });
     }
 };
 
+// @desc    Update Exercise
 exports.updateExercise = async (req, res) => {
     try {
         let exercise = await Exercise.findById(req.params.id);
@@ -75,13 +98,17 @@ exports.updateExercise = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Not authorized' });
         }
 
-        exercise = await Exercise.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        exercise = await Exercise.findByIdAndUpdate(req.params.id, req.body, { 
+            new: true, 
+            runValidators: true 
+        });
         res.status(200).json({ success: true, data: exercise });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server Error' });
     }
 };
 
+// @desc    Delete Exercise
 exports.deleteExercise = async (req, res) => {
     try {
         const exercise = await Exercise.findById(req.params.id);
@@ -92,7 +119,8 @@ exports.deleteExercise = async (req, res) => {
         }
 
         await Exercise.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, data: {} });
+        // Bước 29: Trả về message đúng yêu cầu
+        res.status(200).json({ success: true, message: "Exercise removed" });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server Error' });
     }

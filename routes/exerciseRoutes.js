@@ -7,6 +7,7 @@ const {
     updateExercise, 
     deleteExercise 
 } = require('../controllers/exerciseController');
+
 const { protect, authorizeOwnership } = require('../middlewares/authMiddleware');
 const Exercise = require('../models/exerciseModel'); 
 
@@ -18,7 +19,6 @@ router.route('/')
 
 router.route('/:id')
     .get(getExerciseById)
-
     .put(authorizeOwnership(Exercise), updateExercise) 
     .delete(authorizeOwnership(Exercise), deleteExercise);
 

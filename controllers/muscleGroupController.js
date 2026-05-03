@@ -15,22 +15,18 @@ exports.createMuscleGroup = async (req, res) => {
     }
 };
 
-// ĐIỀU CHỈNH CHÍNH TẠI ĐÂY ĐỂ PHỤC VỤ BƯỚC 9
 exports.getMuscleGroups = async (req, res) => {
     try {
         let query = {};
 
-        // Kiểm tra nếu người dùng truyền "name" trong Body hoặc Query string để lọc
         const nameFilter = req.body.name || req.query.name;
         
         if (nameFilter) {
-            // Sử dụng regex để tìm kiếm tương đối (ví dụ: "Body" sẽ khớp với "Upper Body")
             query.name = { $regex: nameFilter, $options: 'i' };
         }
 
         const muscleGroups = await MuscleGroup.find(query);
 
-        // BƯỚC 9: Nếu có thực hiện lọc theo tên nhưng không tìm thấy bản ghi nào khớp
         if (nameFilter && muscleGroups.length === 0) {
             return res.status(404).json({ 
                 success: false, 
@@ -52,7 +48,6 @@ exports.getMuscleGroupById = async (req, res) => {
         }
         res.status(200).json({ success: true, data: muscleGroup });
     } catch (error) {
-        // Trả về 404 cho cả trường hợp ID sai định dạng MongoDB
         res.status(404).json({ success: false, message: "Muscle group not found" });
     }
 };

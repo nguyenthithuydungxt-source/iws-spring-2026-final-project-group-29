@@ -1,31 +1,41 @@
 const mongoose = require('mongoose');
 
-const taskSchema = new mongoose.Schema({
-    title: {
+const exerciseSchema = new mongoose.Schema({
+    name: {
         type: String,
-        required: [true, 'Task title is required'],
+        required: [true, 'Please provide exercise name'],
         trim: true,
-        maxlength: [100, 'Title cannot exceed 100 characters']
+        maxlength: [100, 'Name cannot exceed 100 characters']
     },
-    description: {
-        type: String,
-        required: [true, 'Task description is required']
+    sets: {
+        type: Number,
+        required: [true, 'Please provide number of sets']
     },
-    status: {
-        type: String,
-        enum: ['pending', 'in-progress', 'completed'],
-        default: 'pending'
+    reps: {
+        type: Number,
+        required: [true, 'Please provide number of reps']
     },
-    priority: {
-        type: String,
-        enum: ['low', 'medium', 'high'],
-        default: 'medium'
+    weight: {
+        type: Number,
+        required: [true, 'Please provide weight']
     },
-    user: {
+    muscleGroup: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'MuscleGroup',
+        required: [true, 'Please provide muscle group']
+    },
+    workoutPlan: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'WorkoutPlan',
+        required: [true, 'Please provide workout plan']
+    },
+    creator: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     }
-}, { timestamps: true });
+}, { 
+    timestamps: true 
+});
 
-module.exports = mongoose.model('Task', taskSchema);
+module.exports = mongoose.model('Exercise', exerciseSchema);
