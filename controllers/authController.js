@@ -1,22 +1,56 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/user');
+const User = require('../models/userModel');
 
-exports.protect = async (req, res, next) => {
-    let token;
-
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-        token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-        return res.status(401).json({ success: false, message: 'Not authorized to access this route. Please log in.' });
-    }
-
+// @desc    Register user
+// @route   POST /api/auth/register
+exports.register = async (req, res) => {
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = await User.findById(decoded.id);
-        next();
+        const { name, email, password, role } = req.body;
+
+        const user = await User.create({
+            name,
+            email,
+            password,
+            role
+        });
+
+        sendTokenResponse(user, 201, res);
     } catch (error) {
-        return res.status(401).json({ success: false, message: 'Session expired or token is invalid. Please log in again.' });
+        res.status(400).json({ success: false, message: error.message });
     }
+};
+
+// @desc    Login user
+// @route   POST /api/auth/login
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: 'Please provide email and password' });
+        }
+
+        const user = await User.findOne({ email }).select('+password');
+
+        if (!user) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        const isMatch = await user.matchPassword(password);
+
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        sendTokenResponse(user, 200, res);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+const sendTokenResponse = (user, statusCode, res) => {
+    const token = user.getSignedJwtToken();
+    res.status(statusCode).json({
+        success: true,
+        token
+    });
 };
